@@ -1,862 +1,250 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mark Park</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #030303;
-            color: white;
-            overflow-x: hidden;
-        }
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Mark Park</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-        /* Animated Background Shapes */
-        .background-container {
-            position: fixed;
-            inset: 0;
-            overflow: hidden;
-            pointer-events: none;
-            z-index: 0;
-        }
+<style>
+* {margin:0;padding:0;box-sizing:border-box;}
+body {
+    font-family:'Inter',sans-serif;
+    background:#030303;
+    color:white;
+    overflow-x:hidden;
+    -webkit-tap-highlight-color: transparent;
+}
 
-        .gradient-overlay {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to bottom right, rgba(99, 102, 241, 0.05), transparent, rgba(244, 63, 94, 0.05));
-            filter: blur(80px);
-        }
+/* Keep your elegant background */
+.background-container {
+    position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;
+}
+.gradient-overlay {position:absolute;inset:0;
+background:linear-gradient(to bottom right,rgba(99,102,241,.05),transparent,rgba(244,63,94,.05));
+filter:blur(60px);
+}
+.elegant-shape{position:absolute;border-radius:50%;background:linear-gradient(to right,rgba(255,255,255,.08),transparent);
+border:1px solid rgba(255,255,255,.1);
+animation:float 10s ease-in-out infinite;will-change:transform;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(10px)}}
 
-        .elegant-shape {
-            position: absolute;
-            border-radius: 50%;
-            background: linear-gradient(to right, rgba(255, 255, 255, 0.08), transparent);
-            backdrop-filter: blur(2px);
-            border: 2px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 8px 32px 0 rgba(255, 255, 255, 0.1);
-            animation: float 12s ease-in-out infinite;
-        }
+.container{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:1rem;}
 
-        .elegant-shape::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 50%;
-            background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.2), transparent 70%);
-        }
+header{text-align:center;margin-bottom:1.5rem;}
+h1{
+    font-size:clamp(2rem,5vw,3.5rem);
+    font-weight:800;
+    background:linear-gradient(to right,rgb(165,180,252),white,rgb(252,165,165));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.subtitle{color:rgba(255,255,255,.6);font-weight:300;}
 
-        .shape1 {
-            width: 600px;
-            height: 140px;
-            left: -5%;
-            top: 20%;
-            background: linear-gradient(to right, rgba(99, 102, 241, 0.15), transparent);
-            animation-delay: 0s;
-            transform: rotate(12deg);
-        }
+.main-grid{display:grid;grid-template-columns:1fr;gap:1.5rem;}
+@media(min-width:1024px){.main-grid{grid-template-columns:2fr 1fr;}}
 
-        .shape2 {
-            width: 500px;
-            height: 120px;
-            right: 0%;
-            top: 75%;
-            background: linear-gradient(to right, rgba(244, 63, 94, 0.15), transparent);
-            animation-delay: 2s;
-            transform: rotate(-15deg);
-        }
+/* MAP section */
+.map-section{
+    position:relative;
+    height:calc(100vh - 220px); /* fills screen nicely on phones */
+    background:rgba(255,255,255,.03);
+    border-radius:1rem;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.1);
+    box-shadow:0 10px 40px rgba(0,0,0,.4);
+}
+#map{width:100%;height:100%;}
 
-        .shape3 {
-            width: 300px;
-            height: 80px;
-            left: 10%;
-            bottom: 10%;
-            background: linear-gradient(to right, rgba(139, 92, 246, 0.15), transparent);
-            animation-delay: 1s;
-            transform: rotate(-8deg);
-        }
+/* Buttons */
+.map-controls{position:absolute;top:.75rem;right:.75rem;z-index:1000;
+display:flex;flex-direction:column;gap:.5rem;}
+.btn{
+    padding:.6rem 1rem;
+    border:none;border-radius:.75rem;
+    font-weight:600;font-size:.9rem;
+    cursor:pointer;transition:transform .2s;
+    backdrop-filter:blur(8px);
+}
+.btn:hover{transform:translateY(-2px);}
+.btn-locate{background:rgba(59,130,246,.9);color:white;}
+.btn-save{background:rgba(34,197,94,.9);color:white;}
+.btn-navigate{background:rgba(168,85,247,.9);color:white;display:none;}
+.btn-clear{background:rgba(239,68,68,.9);color:white;display:none;}
 
-        .shape4 {
-            width: 200px;
-            height: 60px;
-            right: 20%;
-            top: 15%;
-            background: linear-gradient(to right, rgba(251, 191, 36, 0.15), transparent);
-            animation-delay: 3s;
-            transform: rotate(20deg);
-        }
+.info-panel{display:flex;flex-direction:column;gap:1rem;}
+.card{
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:1rem;
+    padding:1rem;
+    box-shadow:0 4px 16px rgba(0,0,0,.3);
+}
+.card-title{font-weight:600;margin-bottom:.5rem;}
+.location-info .info-item{margin-bottom:.5rem;}
 
-        .shape5 {
-            width: 150px;
-            height: 40px;
-            left: 25%;
-            top: 10%;
-            background: linear-gradient(to right, rgba(6, 182, 212, 0.15), transparent);
-            animation-delay: 1.5s;
-            transform: rotate(-25deg);
-        }
+.status-toast{
+    position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);
+    padding:.8rem 1rem;border-radius:.5rem;
+    font-weight:500;opacity:0;transition:opacity .3s,transform .3s;
+    z-index:2000;
+}
+.status-toast.show{opacity:1;transform:translateX(-50%) translateY(-10px);}
+.status-success{background:rgba(34,197,94,.9);}
+.status-error{background:rgba(239,68,68,.9);}
+.status-info{background:rgba(59,130,246,.9);}
 
-        @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(var(--rotation, 0deg)); }
-            50% { transform: translateY(15px) rotate(var(--rotation, 0deg)); }
-        }
+/* Modal tweaks for mobile */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);
+z-index:3000;align-items:center;justify-content:center;padding:1rem;}
+.modal-overlay.active{display:flex;}
+.modal{
+    width:100%;max-width:400px;
+    background:#1a1a1a;border:1px solid rgba(255,255,255,.1);
+    border-radius:1rem;padding:1rem;
+}
+#parking-notes{width:100%;min-height:80px;border-radius:.5rem;
+background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.2);
+color:white;padding:.5rem;font-size:.9rem;}
 
-        .shape1 { --rotation: 12deg; }
-        .shape2 { --rotation: -15deg; }
-        .shape3 { --rotation: -8deg; }
-        .shape4 { --rotation: 20deg; }
-        .shape5 { --rotation: -25deg; }
+/* Fix leaflet scaling */
+.leaflet-routing-container,
+.leaflet-control-zoom {
+    transform: scale(1.2);
+    transform-origin: bottom right;
+}
 
-        /* Main Content */
-        .container {
-            position: relative;
-            z-index: 1;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
+/* ensure text legibility */
+.leaflet-container a { font-size:14px !important; }
+.leaflet-popup-content { font-size:15px !important; }
 
-        header {
-            text-align: center;
-            margin-bottom: 2rem;
-            animation: fadeInDown 1s ease-out;
-        }
-
-        h1 {
-            font-size: clamp(2rem, 5vw, 3.5rem);
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(to right, rgb(165, 180, 252), white, rgb(252, 165, 165));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.02em;
-        }
-
-        .subtitle {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 1.1rem;
-            font-weight: 300;
-        }
-
-        .main-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
-            animation: fadeInUp 1s ease-out 0.2s both;
-        }
-
-        @media (min-width: 1024px) {
-            .main-grid {
-                grid-template-columns: 2fr 1fr;
-            }
-        }
-
-        .map-section {
-            position: relative;
-            height: 600px;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 1rem;
-            overflow: hidden;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(10px);
-        }
-
-        #map {
-            width: 100%;
-            height: 100%;
-        }
-
-        .map-controls {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .btn {
-            padding: 0.75rem 1.25rem;
-            border: none;
-            border-radius: 0.75rem;
-            font-weight: 600;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-family: 'Inter', sans-serif;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-        }
-
-        .btn-locate {
-            background: rgba(59, 130, 246, 0.9);
-            color: white;
-        }
-
-        .btn-save {
-            background: rgba(34, 197, 94, 0.9);
-            color: white;
-        }
-
-        .btn-navigate {
-            background: rgba(168, 85, 247, 0.9);
-            color: white;
-            display: none;
-        }
-
-        .btn-clear {
-            background: rgba(239, 68, 68, 0.9);
-            color: white;
-            display: none;
-        }
-
-        .info-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        }
-
-        .card-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .location-info {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .info-item {
-            background: rgba(255, 255, 255, 0.03);
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .info-label {
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.4);
-            margin-bottom: 0.25rem;
-        }
-
-        .info-value {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 0.9rem;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 2rem 1rem;
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        .empty-icon {
-            width: 4rem;
-            height: 4rem;
-            margin: 0 auto 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-        }
-
-        .instructions {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(244, 63, 94, 0.1));
-        }
-
-        .instructions ol {
-            list-style: none;
-            counter-reset: steps;
-        }
-
-        .instructions li {
-            counter-increment: steps;
-            display: flex;
-            gap: 0.75rem;
-            margin-bottom: 0.75rem;
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .instructions li::before {
-            content: counter(steps);
-            color: rgb(165, 180, 252);
-            font-weight: 700;
-            font-size: 1rem;
-        }
-
-        /* Status Toast */
-        .status-toast {
-            position: fixed;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            padding: 1rem 1.5rem;
-            border-radius: 0.75rem;
-            font-weight: 500;
-            z-index: 2000;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            opacity: 0;
-            transition: all 0.3s ease;
-        }
-
-        .status-toast.show {
-            transform: translateX(-50%) translateY(0);
-            opacity: 1;
-        }
-
-        .status-success { background: rgba(34, 197, 94, 0.9); color: white; }
-        .status-error { background: rgba(239, 68, 68, 0.9); color: white; }
-        .status-info { background: rgba(59, 130, 246, 0.9); color: white; }
-
-        /* Modal */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
-            z-index: 3000;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-        }
-
-        .modal {
-            background: #1a1a1a;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 1rem;
-            padding: 2rem;
-            max-width: 500px;
-            width: 100%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            animation: modalSlideIn 0.3s ease-out;
-        }
-
-        @keyframes modalSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .modal h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            color: white;
-        }
-
-        .current-location-display {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        #parking-notes {
-            width: 100%;
-            padding: 0.75rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 0.5rem;
-            color: white;
-            font-size: 1rem;
-            resize: vertical;
-            min-height: 100px;
-            font-family: 'Inter', sans-serif;
-            margin-bottom: 1rem;
-        }
-
-        #parking-notes::placeholder {
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        .modal-buttons {
-            display: flex;
-            gap: 0.75rem;
-        }
-
-        .modal-btn {
-            flex: 1;
-            padding: 0.75rem;
-            border: none;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-family: 'Inter', sans-serif;
-        }
-
-        .modal-btn-cancel {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-        }
-
-        .modal-btn-save {
-            background: rgb(34, 197, 94);
-            color: white;
-        }
-
-        footer {
-            text-align: center;
-            padding: 2rem;
-            color: rgba(255, 255, 255, 0.4);
-            font-size: 0.9rem;
-            margin-top: 2rem;
-        }
-
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @media (max-width: 768px) {
-            .map-section {
-                height: 400px;
-            }
-        }
-    </style>
+footer{text-align:center;color:rgba(255,255,255,.4);margin:1.5rem 0;}
+</style>
 </head>
 <body>
-    <!-- Animated Background -->
-    <div class="background-container">
-        <div class="gradient-overlay"></div>
-        <div class="elegant-shape shape1"></div>
-        <div class="elegant-shape shape2"></div>
-        <div class="elegant-shape shape3"></div>
-        <div class="elegant-shape shape4"></div>
-        <div class="elegant-shape shape5"></div>
-    </div>
+<div class="background-container"><div class="gradient-overlay"></div></div>
 
-    <div class="container">
-        <header>
-            <h1>Mark Park</h1>
-            <p class="subtitle">Save your parking spot and navigate back to it</p>
-        </header>
-        
-        <div class="main-grid">
-            <!-- Map Section -->
-            <div class="map-section">
-                <div id="map"></div>
-                
-                <div class="map-controls">
-                    <button id="locate-btn" class="btn btn-locate">
-                        <span>📍</span> Find Location
-                    </button>
-                    <button id="save-btn" class="btn btn-save">
-                        <span>💾</span> Save Parking
-                    </button>
-                    <button id="navigate-btn" class="btn btn-navigate">
-                        <span>🧭</span> Navigate
-                    </button>
-                    <button id="clear-btn" class="btn btn-clear">
-                        <span>🗑️</span> Clear
-                    </button>
-                </div>
-            </div>
+<div class="container">
+<header>
+<h1>Mark Park</h1>
+<p class="subtitle">Save your parking spot and navigate back to it</p>
+</header>
 
-            <!-- Info Panel -->
-            <div class="info-panel">
-                <div class="card">
-                    <h2 class="card-title">
-                        <span>📍</span> Saved Location
-                    </h2>
-                    <div id="location-details">
-                        <div class="empty-state">
-                            <div class="empty-icon">🅿️</div>
-                            <p>No parking location saved yet</p>
-                        </div>
-                    </div>
-                </div>
+<div class="main-grid">
+<div class="map-section">
+<div id="map"></div>
+<div class="map-controls">
+<button id="locate-btn" class="btn btn-locate">📍 Find</button>
+<button id="save-btn" class="btn btn-save">💾 Save</button>
+<button id="navigate-btn" class="btn btn-navigate">🧭 Navigate</button>
+<button id="clear-btn" class="btn btn-clear">🗑️ Clear</button>
+</div>
+</div>
 
-                <div class="card instructions">
-                    <h3 class="card-title">
-                        <span>ℹ️</span> How to Use
-                    </h3>
-                    <ol>
-                        <li>Click "Find Location" to locate yourself</li>
-                        <li>Click "Save Parking" to save your spot</li>
-                        <li>Add notes about your parking location</li>
-                        <li>Use "Navigate" to get directions back</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
+<div class="info-panel">
+<div class="card">
+<h2 class="card-title">📍 Saved Location</h2>
+<div id="location-details">
+<div class="empty-state" style="color:rgba(255,255,255,.5);text-align:center;">
+🅿️ No parking location saved yet
+</div>
+</div>
+</div>
+</div>
+</div>
 
-        <footer>
-            By AKSHATH"
-        </footer>
-    </div>
+<footer>By AKSHATH</footer>
+</div>
 
-    <!-- Status Toast -->
-    <div id="status-toast" class="status-toast"></div>
+<div id="status-toast" class="status-toast"></div>
 
-    <!-- Save Modal -->
-    <div id="save-modal" class="modal-overlay">
-        <div class="modal">
-            <h3>Save Parking Location</h3>
-            <div id="current-location-display" class="current-location-display">
-                Current location will appear here
-            </div>
-            <textarea id="parking-notes" placeholder="Enter parking notes (e.g., Floor P2, Near elevator)"></textarea>
-            <div class="modal-buttons">
-                <button id="cancel-btn" class="modal-btn modal-btn-cancel">Cancel</button>
-                <button id="confirm-save-btn" class="modal-btn modal-btn-save">Save Location</button>
-            </div>
-        </div>
-    </div>
+<div id="save-modal" class="modal-overlay">
+<div class="modal">
+<h3>Save Parking Location</h3>
+<div id="current-location-display" style="margin-bottom:.5rem;color:#ccc;"></div>
+<textarea id="parking-notes" placeholder="Enter parking notes"></textarea>
+<div style="display:flex;gap:.5rem;">
+<button id="cancel-btn" class="btn modal-btn-cancel" style="flex:1;background:#333;color:white;">Cancel</button>
+<button id="confirm-save-btn" class="btn modal-btn-save" style="flex:1;background:rgb(34,197,94);color:white;">Save</button>
+</div>
+</div>
+</div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
-    <script>
-        let map;
-        let userMarker = null;
-        let parkingMarker = null;
-        let routingControl = null;
-        let savedLocation = JSON.parse(localStorage.getItem('savedParkingLocation')) || null;
-        let currentLocation = null;
-
-        const saveModal = document.getElementById('save-modal');
-        const currentLocationDisplay = document.getElementById('current-location-display');
-        const parkingNotes = document.getElementById('parking-notes');
-        const confirmSaveBtn = document.getElementById('confirm-save-btn');
-        const cancelBtn = document.getElementById('cancel-btn');
-        const navigateBtn = document.getElementById('navigate-btn');
-        const clearBtn = document.getElementById('clear-btn');
-        
-        function initMap() {
-            map = L.map('map').setView([40.7128, -74.0060], 12);
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(map);
-            
-            if (savedLocation) {
-                loadSavedLocation();
-                updateButtons();
-            }
-        }
-        
-        function setUserLocation(lat, lng) {
-            currentLocation = { lat, lng };
-            map.setView([lat, lng], 16);
-            
-            if (userMarker) {
-                userMarker.setLatLng([lat, lng]);
-            } else {
-                userMarker = L.marker([lat, lng], {
-                    icon: L.divIcon({
-                        className: 'user-marker',
-                        html: '<div style="background-color:#3b82f6; width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(59,130,246,0.8);"></div>',
-                        iconSize: [20, 20],
-                        iconAnchor: [10, 10]
-                    })
-                }).addTo(map)
-                    .bindPopup("Your Current Location")
-                    .openPopup();
-            }
-            
-            showStatus('Location set! Ready to save.', 'success');
-        }
-        
-        function locateUser() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        setUserLocation(position.coords.latitude, position.coords.longitude);
-                    },
-                    () => {
-                        showStatus('Unable to get your location.', 'error');
-                    }
-                );
-            } else {
-                showStatus('Geolocation not supported.', 'error');
-            }
-        }
-        
-        function openSavePopup() {
-            if (!userMarker) {
-                showStatus('Please find your location first.', 'error');
-                return;
-            }
-            
-            const position = userMarker.getLatLng();
-            currentLocationDisplay.textContent = `Lat: ${position.lat.toFixed(6)}, Lng: ${position.lng.toFixed(6)}`;
-            parkingNotes.value = '';
-            saveModal.classList.add('active');
-        }
-        
-        function saveLocation() {
-            const position = userMarker.getLatLng();
-            const notes = parkingNotes.value;
-            
-            savedLocation = {
-                id: Date.now(),
-                lat: position.lat,
-                lng: position.lng,
-                notes: notes,
-                timestamp: new Date().toLocaleString()
-            };
-            
-            localStorage.setItem('savedParkingLocation', JSON.stringify(savedLocation));
-            
-            addParkingMarker(savedLocation);
-            updateLocationDetails();
-            updateButtons();
-            
-            saveModal.classList.remove('active');
-            showStatus('Parking location saved!', 'success');
-        }
-        
-        function addParkingMarker(location) {
-            if (parkingMarker) {
-                map.removeLayer(parkingMarker);
-            }
-            
-            parkingMarker = L.marker([location.lat, location.lng], {
-                icon: L.divIcon({
-                    className: 'parking-marker',
-                    html: '<div style="background-color:#ef4444; width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(239,68,68,0.8);"></div>',
-                    iconSize: [20, 20],
-                    iconAnchor: [10, 10]
-                })
-            }).addTo(map)
-                .bindPopup(`<b>🅿️ Parking Location</b><br>${location.notes || 'No notes'}`);
-        }
-        
-        function navigateToParking() {
-            if (!savedLocation) {
-                showStatus('No parking location saved.', 'error');
-                return;
-            }
-
-            if (!navigator.geolocation) {
-                showStatus('Geolocation not supported for navigation.', 'error');
-                return;
-            }
-
-            if (routingControl) {
-                map.removeControl(routingControl);
-                routingControl = null;
-            }
-
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    routingControl = L.Routing.control({
-                        waypoints: [
-                            L.latLng(position.coords.latitude, position.coords.longitude),
-                            L.latLng(savedLocation.lat, savedLocation.lng)
-                        ],
-                        routeWhileDragging: false,
-                        showAlternatives: false,
-                        lineOptions: {
-                            styles: [{color: '#a855f7', opacity: 0.8, weight: 5}]
-                        },
-                        createMarker: function(i, waypoint, n) {
-                            if (i === 0) {
-                                return L.marker(waypoint.latLng, {
-                                    icon: L.divIcon({
-                                        className: 'user-marker',
-                                        html: '<div style="background-color:#3b82f6; width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(59,130,246,0.8);"></div>',
-                                        iconSize: [20, 20],
-                                        iconAnchor: [10, 10]
-                                    })
-                                }).bindPopup("Your Location");
-                            } else {
-                                return L.marker(waypoint.latLng, {
-                                    icon: L.divIcon({
-                                        className: 'parking-marker',
-                                        html: '<div style="background-color:#ef4444; width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(239,68,68,0.8);"></div>',
-                                        iconSize: [20, 20],
-                                        iconAnchor: [10, 10]
-                                    })
-                                }).bindPopup("Parking");
-                            }
-                        }
-                    }).addTo(map);
-
-                    showStatus('Navigation route displayed!', 'info');
-                },
-                () => {
-                    showStatus('Could not get current location.', 'error');
-                }
-            );
-        }
-        
-        function loadSavedLocation() {
-            if (savedLocation) {
-                addParkingMarker(savedLocation);
-                updateLocationDetails();
-            }
-        }
-        
-        function updateLocationDetails() {
-            const locationDetails = document.getElementById('location-details');
-            
-            if (!savedLocation) {
-                locationDetails.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon">🅿️</div>
-                        <p>No parking location saved yet</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            let html = '<div class="location-info">';
-            
-            html += `
-                <div class="info-item">
-                    <div class="info-label">⏰ Saved at</div>
-                    <div class="info-value">${savedLocation.timestamp}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">📍 Coordinates</div>
-                    <div class="info-value">${savedLocation.lat.toFixed(6)}, ${savedLocation.lng.toFixed(6)}</div>
-                </div>
-            `;
-            
-            if (savedLocation.notes) {
-                html += `
-                    <div class="info-item">
-                        <div class="info-label">📝 Notes</div>
-                        <div class="info-value">${savedLocation.notes}</div>
-                    </div>
-                `;
-            }
-            
-            html += '</div>';
-            locationDetails.innerHTML = html;
-        }
-        
-        function updateButtons() {
-            if (savedLocation) {
-                navigateBtn.style.display = 'flex';
-                clearBtn.style.display = 'flex';
-            } else {
-                navigateBtn.style.display = 'none';
-                clearBtn.style.display = 'none';
-            }
-        }
-        
-        function clearLocation() {
-            if (!savedLocation) return;
-            
-            if (confirm('Clear saved parking location?')) {
-                savedLocation = null;
-                localStorage.removeItem('savedParkingLocation');
-                
-                if (parkingMarker) {
-                    map.removeLayer(parkingMarker);
-                    parkingMarker = null;
-                }
-
-                if (routingControl) {
-                    map.removeControl(routingControl);
-                    routingControl = null;
-                }
-                
-                updateLocationDetails();
-                updateButtons();
-                
-                showStatus('Parking location cleared.', 'success');
-            }
-        }
-        
-        function showStatus(message, type) {
-            const toast = document.getElementById('status-toast');
-            toast.textContent = message;
-            toast.className = `status-toast status-${type} show`;
-            
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 4000);
-        }
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            initMap();
-            
-            document.getElementById('locate-btn').addEventListener('click', locateUser);
-            document.getElementById('save-btn').addEventListener('click', openSavePopup);
-            navigateBtn.addEventListener('click', navigateToParking);
-            clearBtn.addEventListener('click', clearLocation);
-            
-            confirmSaveBtn.addEventListener('click', saveLocation);
-            cancelBtn.addEventListener('click', () => {
-                saveModal.classList.remove('active');
-            });
-
-            saveModal.addEventListener('click', (e) => {
-                if (e.target === saveModal) {
-                    saveModal.classList.remove('active');
-                }
-            });
-        });
-    </script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+<script>
+let map,userMarker,parkingMarker,routingControl;
+let savedLocation=JSON.parse(localStorage.getItem('savedParkingLocation'))||null;
+const toast=document.getElementById('status-toast');
+function showStatus(msg,type){
+toast.textContent=msg;
+toast.className=`status-toast status-${type} show`;
+setTimeout(()=>toast.classList.remove('show'),3500);
+}
+function initMap(){
+map=L.map('map',{zoomControl:true}).setView([12.9716,77.5946],14);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+attribution:'&copy; OpenStreetMap'
+}).addTo(map);
+if(savedLocation)addMarker(savedLocation);
+}
+function locateUser(){
+if(!navigator.geolocation)return showStatus('Geolocation not supported','error');
+navigator.geolocation.getCurrentPosition(pos=>{
+const {latitude,longitude}=pos.coords;
+if(!userMarker){
+userMarker=L.marker([latitude,longitude]).addTo(map).bindPopup('You are here');
+}else userMarker.setLatLng([latitude,longitude]);
+map.setView([latitude,longitude],17);
+showStatus('Location set!','success');
+},()=>showStatus('Location failed','error'));
+}
+function addMarker(loc){
+if(parkingMarker)map.removeLayer(parkingMarker);
+parkingMarker=L.marker([loc.lat,loc.lng]).addTo(map)
+.bindPopup('🅿️ Parking Spot<br>'+ (loc.notes||'No notes'));
+}
+function saveLocation(){
+if(!userMarker)return showStatus('Find your location first','error');
+const pos=userMarker.getLatLng();
+const notes=document.getElementById('parking-notes').value;
+savedLocation={lat:pos.lat,lng:pos.lng,notes,timestamp:new Date().toLocaleString()};
+localStorage.setItem('savedParkingLocation',JSON.stringify(savedLocation));
+addMarker(savedLocation);
+showStatus('Saved!','success');
+document.getElementById('save-modal').classList.remove('active');
+}
+function navigateToParking(){
+if(!savedLocation)return showStatus('No saved location','error');
+navigator.geolocation.getCurrentPosition(pos=>{
+const start=L.latLng(pos.coords.latitude,pos.coords.longitude);
+const end=L.latLng(savedLocation.lat,savedLocation.lng);
+if(routingControl){map.removeControl(routingControl);}
+routingControl=L.Routing.control({
+waypoints:[start,end],
+lineOptions:{styles:[{color:'#a855f7',opacity:0.8,weight:5}]},
+createMarker:()=>null
+}).addTo(map);
+showStatus('Route displayed','info');
+});
+}
+function clearLocation(){
+localStorage.removeItem('savedParkingLocation');
+if(parkingMarker)map.removeLayer(parkingMarker);
+if(routingControl)map.removeControl(routingControl);
+savedLocation=null;showStatus('Cleared','success');
+}
+document.addEventListener('DOMContentLoaded',()=>{
+initMap();
+document.getElementById('locate-btn').onclick=locateUser;
+document.getElementById('save-btn').onclick=()=>document.getElementById('save-modal').classList.add('active');
+document.getElementById('confirm-save-btn').onclick=saveLocation;
+document.getElementById('cancel-btn').onclick=()=>document.getElementById('save-modal').classList.remove('active');
+document.getElementById('navigate-btn').onclick=navigateToParking;
+document.getElementById('clear-btn').onclick=clearLocation;
+});
+</script>
 </body>
 </html>
