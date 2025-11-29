@@ -2,7 +2,7 @@
   "name": "Mark Park",
   "short_name": "MarkPark",
   "description": "Save your parking spot and navigate back to it",
-  "start_url": "/",
+  "start_url": "/MarkPark/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
