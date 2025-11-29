@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<meta name="description" content="Save your parking spot and navigate back to it">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mark Park">
 <title>Mark Park</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -18,7 +24,6 @@ body {
     overflow-x:hidden;
 }
 
-/* Layout */
 .container{position:relative;max-width:1400px;margin:0 auto;padding:1rem;}
 header{text-align:center;margin-bottom:1.5rem;}
 h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;color:white;}
@@ -42,7 +47,6 @@ h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;color:white;}
     touch-action: none;
 }
 
-/* Prevent map from blocking scroll on mobile */
 @media(max-width:1023px){
     .map-section{
         height:50vh;
@@ -50,7 +54,6 @@ h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;color:white;}
     }
 }
 
-/* GPS Center Btn */
 .center-btn {
     position:absolute;
     bottom:1rem;
@@ -64,12 +67,11 @@ h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;color:white;}
     font-size:1.3rem;
     cursor:pointer;
     box-shadow:0 4px 12px rgba(0,0,0,.3);
-    transition:transform 0.2s;
+    transition:all 0.3s;
 }
 .center-btn:hover{transform:scale(1.1);}
 .center-btn:active{transform:scale(0.95);}
 
-/* Distance Box */
 .distance-box{
     position:absolute;
     bottom:1rem;
@@ -113,7 +115,6 @@ h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;color:white;}
 .card h2{margin-bottom:1rem;font-size:1.3rem;}
 #location-details p{margin:0.5rem 0;line-height:1.6;}
 
-/* NAVIGATION PANEL below map */
 #navigation-panel{
     margin-top:1rem;
     background:#111;
@@ -132,7 +133,6 @@ h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;color:white;}
     line-height:1.8;
 }
 
-/* Custom Modal */
 .modal{
     display:none;
     position:fixed;
@@ -155,16 +155,6 @@ h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;color:white;}
 .modal-content h3{
     margin-bottom:1rem;
     color:white;
-}
-.modal-content input{
-    width:100%;
-    padding:.8rem;
-    border:1px solid rgba(255,255,255,.3);
-    border-radius:.5rem;
-    background:#111;
-    color:white;
-    font-size:1rem;
-    margin-bottom:1rem;
 }
 .modal-content textarea{
     width:100%;
@@ -208,15 +198,12 @@ footer{text-align:center;color:rgba(255,255,255,.4);margin:1.5rem 0;font-size:.9
 
 <div class="main-grid">
 
-<!-- MAP -->
 <div>
 <div class="map-section">
     <div id="map"></div>
 
-    <!-- GPS Center -->
     <button id="center-location-btn" class="center-btn" title="Center on my location">📍</button>
 
-    <!-- Distance -->
     <div id="distance-box" class="distance-box">0 m</div>
 
     <div class="map-controls">
@@ -227,14 +214,12 @@ footer{text-align:center;color:rgba(255,255,255,.4);margin:1.5rem 0;font-size:.9
     </div>
 </div>
 
-<!-- NAVIGATION PANEL -->
 <div id="navigation-panel">
     <h3>📍 Turn-by-Turn Directions</h3>
     <div id="navigation-steps">No navigation data</div>
 </div>
 </div>
 
-<!-- SIDE INFO -->
 <div class="info-panel">
 <div class="card">
 <h2>📍 Saved Location</h2>
@@ -249,7 +234,6 @@ footer{text-align:center;color:rgba(255,255,255,.4);margin:1.5rem 0;font-size:.9
 <footer>By AKSHATH | Mark Park v2.0</footer>
 </div>
 
-<!-- Custom Modal -->
 <div id="descriptionModal" class="modal">
     <div class="modal-content">
         <h3>💾 Save Parking Location</h3>
@@ -268,23 +252,20 @@ footer{text-align:center;color:rgba(255,255,255,.4);margin:1.5rem 0;font-size:.9
 <script>
 let map, userMarker, parkingMarker, routingControl;
 let userWatchId = null;
-
-// Load saved location from memory instead of localStorage
 let savedLocation = null;
+let autoFollow = false;
 
-/* DOM Elements */
 const navigationPanel = document.getElementById("navigation-panel");
 const navigationSteps = document.getElementById("navigation-steps");
 const distanceBox = document.getElementById("distance-box");
 const modal = document.getElementById("descriptionModal");
 const descriptionInput = document.getElementById("parkingDescription");
 
-/* MAP INIT */
 function initMap(){
     map = L.map('map', {
         zoomControl: true,
         touchZoom: true,
-        scrollWheelZoom: false, // Disable scroll zoom to prevent map hijacking scroll
+        scrollWheelZoom: false,
         dragging: true,
         tap: true,
         doubleClickZoom: true
@@ -295,33 +276,21 @@ function initMap(){
         maxZoom: 19
     }).addTo(map);
 
-    // Enable scroll zoom only when map is focused/clicked
-    map.once('focus', function() { 
-        map.scrollWheelZoom.enable(); 
-    });
-    
-    map.on('click', function() {
-        map.scrollWheelZoom.enable();
-    });
-    
-    map.on('mouseout', function() {
-        map.scrollWheelZoom.disable();
-    });
+    map.once('focus', function() { map.scrollWheelZoom.enable(); });
+    map.on('click', function() { map.scrollWheelZoom.enable(); });
+    map.on('mouseout', function() { map.scrollWheelZoom.disable(); });
 
-    // Restore saved location if exists
     updateLocationDetails();
 }
 
 initMap();
 
-/* Locate User */
 function locateUser(){
     if(!navigator.geolocation){
         alert("Geolocation is not supported by your browser");
         return;
     }
     
-    // Clear existing watch if any
     if(userWatchId !== null){
         navigator.geolocation.clearWatch(userWatchId);
     }
@@ -343,8 +312,9 @@ function locateUser(){
                 map.setView([lat, lng], 16);
             } else {
                 userMarker.setLatLng([lat, lng]);
-                // Auto-recenter map as user moves (optional - can be disabled)
-                // map.panTo([lat, lng]);
+                if(autoFollow){
+                    map.panTo([lat, lng]);
+                }
             }
 
             updateDistance();
@@ -361,7 +331,6 @@ function locateUser(){
     );
 }
 
-/* Marker for saved location */
 function addMarker(loc){
     if(parkingMarker) map.removeLayer(parkingMarker);
     
@@ -383,7 +352,6 @@ function addMarker(loc){
     parkingMarker.bindPopup(popupContent);
 }
 
-/* Show modal */
 function showModal(){
     if(!userMarker){
         alert("Please enable location first by clicking 'Find'");
@@ -393,12 +361,10 @@ function showModal(){
     modal.style.display = "block";
 }
 
-/* Close modal */
 function closeModal(){
     modal.style.display = "none";
 }
 
-/* Confirm save */
 function confirmSave(){
     const pos = userMarker.getLatLng();
     const description = descriptionInput.value.trim();
@@ -419,13 +385,11 @@ function confirmSave(){
     
     closeModal();
     
-    // Show success message
     setTimeout(() => {
         if(parkingMarker) parkingMarker.openPopup();
     }, 300);
 }
 
-/* Update location details panel */
 function updateLocationDetails(){
     const panel = document.getElementById("location-details");
     if(savedLocation){
@@ -439,7 +403,6 @@ function updateLocationDetails(){
     }
 }
 
-/* Navigation (route) */
 function navigateToParking(){
     if(!savedLocation){
         alert("No parking location saved. Please save a location first.");
@@ -451,7 +414,6 @@ function navigateToParking(){
         return;
     }
 
-    // Remove existing route
     if(routingControl) map.removeControl(routingControl);
 
     routingControl = L.Routing.control({
@@ -496,8 +458,6 @@ function navigateToParking(){
         });
 
         navigationSteps.innerHTML = html;
-        
-        // Scroll to navigation panel on mobile
         navigationPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     })
     .on('routingerror', e => {
@@ -507,7 +467,6 @@ function navigateToParking(){
     .addTo(map);
 }
 
-/* Distance updater */
 function updateDistance(){
     if(!savedLocation || !userMarker) return;
     
@@ -522,7 +481,6 @@ function updateDistance(){
     }
 }
 
-/* Clear */
 function clearLocation(){
     if(!confirm("Are you sure you want to clear the saved parking location?")){
         return;
@@ -542,29 +500,36 @@ function clearLocation(){
     updateLocationDetails();
 }
 
-/* GPS center */
 document.getElementById("center-location-btn").onclick = () => {
     if(!userMarker){
         alert("Please enable location first by clicking 'Find'");
         return;
     }
-    map.setView(userMarker.getLatLng(), 17, {animate: true, duration: 0.5});
+    
+    autoFollow = !autoFollow;
+    const btn = document.getElementById("center-location-btn");
+    
+    if(autoFollow){
+        btn.style.background = "rgba(34,197,94,.9)";
+        btn.title = "Auto-follow ON - Click to disable";
+        map.setView(userMarker.getLatLng(), 17, {animate: true, duration: 0.5});
+    } else {
+        btn.style.background = "rgba(59,130,246,.9)";
+        btn.title = "Auto-follow OFF - Click to enable";
+    }
 };
 
-/* Event binds */
 document.getElementById("locate-btn").onclick = locateUser;
 document.getElementById("save-btn").onclick = showModal;
 document.getElementById("navigate-btn").onclick = navigateToParking;
 document.getElementById("clear-btn").onclick = clearLocation;
 
-// Close modal when clicking outside
 window.onclick = (event) => {
     if(event.target == modal){
         closeModal();
     }
 };
 
-// Auto-start location tracking
 setTimeout(() => {
     locateUser();
 }, 500);
