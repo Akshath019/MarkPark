@@ -1,726 +1,615 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Save your parking spot and navigate back to it"
-    />
-    <link rel="manifest" href="manifest.json" />
-    <link rel="icon" type="image/png" sizes="192x192" href="logo.png" />
-    <link rel="apple-touch-icon" href="logo.png" />
-    <title>Mark Park</title>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<meta name="description" content="Save your parking spot and navigate back to it">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
+<title>Mark Park</title>
 
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    />
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      body {
-        font-family: "Inter", sans-serif;
-        background: #000;
-        color: white;
-        overflow-x: hidden;
-      }
-      .container {
-        position: relative;
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 1rem;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-      }
-      header {
-        text-align: center;
-        margin-bottom: 1.5rem;
-        flex-shrink: 0;
-      }
-      h1 {
-        font-size: clamp(2rem, 5vw, 3.5rem);
-        font-weight: 800;
-        color: white;
-      }
-      .subtitle {
-        color: rgba(255, 255, 255, 0.6);
-      }
-      .main-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-        flex: 1;
-        min-height: 0;
-      }
-      @media (min-width: 1024px) {
-        .main-grid {
-          grid-template-columns: 2fr 1fr;
-        }
-      }
+<style>
+* {margin:0;padding:0;box-sizing:border-box;}
+body {
+    font-family:'Inter',sans-serif;
+    background:#000;
+    color:white;
+    overflow-x:hidden;
+}
+.container{
+    position:relative;
+    max-width:1400px;
+    margin:0 auto;
+    padding:1rem;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+header{text-align:center;margin-bottom:1.5rem;flex-shrink: 0;}
+h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;color:white;}
+.subtitle{color:rgba(255,255,255,.6);}
+.main-grid{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:1.5rem;
+    flex: 1;
+    min-height: 0;
+}
+@media(min-width:1024px){
+    .main-grid{grid-template-columns:2fr 1fr;}
+}
 
-      .map-section {
-        position: relative;
-        height: 70vh;
-        background: #111;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 1rem;
-        overflow: hidden;
-        touch-action: none;
-      }
-      #map {
-        width: 100%;
-        height: 100%;
-        touch-action: none;
-      }
+.map-section{
+    position:relative;
+    height:70vh;
+    background:#111;
+    border:1px solid rgba(255,255,255,.2);
+    border-radius:1rem;
+    overflow:hidden;
+    touch-action: none;
+}
+#map{
+    width:100%;
+    height:100%;
+    touch-action: none;
+}
 
-      /* Hide Leaflet attribution box */
-      .leaflet-control-attribution {
-        display: none !important;
-      }
+/* Hide Leaflet attribution box */
+.leaflet-control-attribution {
+    display: none !important;
+}
 
-      /* Prevent map touch events from scrolling page */
-      .leaflet-container {
-        touch-action: none;
-      }
+/* Prevent map touch events from scrolling page */
+.leaflet-container {
+    touch-action: none;
+}
 
-      .center-btn {
-        position: absolute;
-        bottom: 5rem;
-        left: 1rem;
-        z-index: 1500;
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        background: rgba(59, 130, 246, 0.9);
-        border: none;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.3rem;
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      }
+.center-btn{
+    position:absolute;
+    bottom:5rem;
+    left:1rem;
+    z-index:1500;
+    width:50px;
+    height:50px;
+    border-radius:50%;
+    background:rgba(59,130,246,.9);
+    border:none;
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:1.3rem;
+    cursor:pointer;
+    box-shadow:0 4px 12px rgba(0,0,0,.3);
+}
 
-      .distance-box {
-        position: absolute;
-        bottom: 5rem;
-        right: 1rem;
-        background: rgba(0, 0, 0, 0.8);
-        padding: 0.8rem 1.2rem;
-        border-radius: 0.75rem;
-        font-size: 1.1rem;
-        font-weight: 600;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        z-index: 1500;
-        display: none;
-      }
+.distance-box{
+    position:absolute;
+    bottom:5rem;
+    right:1rem;
+    background:rgba(0,0,0,.8);
+    padding:.8rem 1.2rem;
+    border-radius:.75rem;
+    font-size:1.1rem;
+    font-weight:600;
+    border:1px solid rgba(255,255,255,.2);
+    z-index:1500;
+    display:none;
+}
 
-      .bottom-controls {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: rgba(0, 0, 0, 0.95);
-        padding: 0.75rem;
-        display: flex;
-        gap: 0.5rem;
-        z-index: 1600;
-      }
-      .btn {
-        flex: 1;
-        padding: 0.8rem;
-        border: none;
-        border-radius: 0.75rem;
-        font-weight: 600;
-        font-size: 0.85rem;
-        cursor: pointer;
-      }
-      .btn-locate {
-        background: rgba(59, 130, 246, 0.95);
-        color: white;
-      }
-      .btn-save {
-        background: rgba(34, 197, 94, 0.95);
-        color: white;
-      }
-      .btn-navigate {
-        background: rgba(168, 85, 247, 0.95);
-        color: white;
-        display: none;
-      }
-      .btn-clear {
-        background: rgba(239, 68, 68, 0.95);
-        color: white;
-        display: none;
-      }
+.bottom-controls{
+    position:absolute;
+    bottom:0;
+    left:0;
+    right:0;
+    background:rgba(0,0,0,.95);
+    padding:.75rem;
+    display:flex;
+    gap:.5rem;
+    z-index:1600;
+}
+.btn{
+    flex:1;
+    padding:.8rem;
+    border:none;
+    border-radius:.75rem;
+    font-weight:600;
+    font-size:.85rem;
+    cursor:pointer;
+}
+.btn-locate{background:rgba(59,130,246,.95);color:white;}
+.btn-save{background:rgba(34,197,94,.95);color:white;}
+.btn-navigate{background:rgba(168,85,247,.95);color:white;display:none;}
+.btn-clear{background:rgba(239,68,68,.95);color:white;display:none;}
 
-      .card {
-        background: #111;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 1.5rem;
-        border-radius: 1rem;
-      }
-      .card h2 {
-        margin-bottom: 1rem;
-        font-size: 1.3rem;
-      }
-      #location-details p {
-        margin: 0.5rem 0;
-        line-height: 1.6;
-      }
+.card{
+    background:#111;
+    border:1px solid rgba(255,255,255,.1);
+    padding:1.5rem;
+    border-radius:1rem;
+}
+.card h2{margin-bottom:1rem;font-size:1.3rem;}
+#location-details p{margin:0.5rem 0;line-height:1.6;}
 
-      .timer-display {
-        text-align: center;
-        margin-top: 1rem;
-        padding: 1rem;
-        background: #0a0a0a;
-        border-radius: 0.75rem;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-      }
-      .timer-time {
-        font-size: 2.5rem;
-        font-weight: 800;
-        color: #3b82f6;
-      }
+.timer-display{
+    text-align:center;
+    margin-top:1rem;
+    padding:1rem;
+    background:#0a0a0a;
+    border-radius:.75rem;
+    border:1px solid rgba(255,255,255,.2);
+}
+.timer-time{font-size:2.5rem;font-weight:800;color:#3b82f6;}
 
-      .modal {
-        display: none;
-        position: fixed;
-        z-index: 2000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.85);
-        overflow-y: auto;
-        padding: 1rem;
-      }
-      .modal-content {
-        background: #1a1a1a;
-        margin: 5rem auto;
-        padding: 2rem;
-        border-radius: 1rem;
-        width: 100%;
-        max-width: 500px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-      }
-      .modal-content h3 {
-        margin-bottom: 1.5rem;
-        font-size: 1.5rem;
-      }
-      .modal-content h4 {
-        margin-top: 1.25rem;
-        margin-bottom: 0.5rem;
-        font-size: 1rem;
-        font-weight: 600;
-        color: rgba(255, 255, 255, 0.9);
-      }
-      .modal-buttons {
-        display: flex;
-        gap: 0.5rem;
-        justify-content: flex-end;
-        margin-top: 1.5rem;
-      }
-      .modal-btn-save {
-        background: #22c55e;
-        color: white;
-        padding: 0.7rem 1.5rem;
-        border: none;
-        border-radius: 0.5rem;
-        cursor: pointer;
-        font-weight: 600;
-      }
-      .modal-btn-cancel {
-        background: #374151;
-        color: white;
-        padding: 0.7rem 1.5rem;
-        border: none;
-        border-radius: 0.5rem;
-        cursor: pointer;
-        font-weight: 600;
-      }
+.modal{
+    display:none;
+    position:fixed;
+    z-index:2000;
+    left:0;
+    top:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,.85);
+    overflow-y: auto;
+    padding: 1rem;
+}
+.modal-content{
+    background:#1a1a1a;
+    margin:5rem auto;
+    padding:2rem;
+    border-radius:1rem;
+    width:100%;
+    max-width:500px;
+    border:1px solid rgba(255,255,255,.2);
+}
+.modal-content h3{
+    margin-bottom:1.5rem;
+    font-size:1.5rem;
+}
+.modal-content h4{
+    margin-top:1.25rem;
+    margin-bottom:0.5rem;
+    font-size:1rem;
+    font-weight:600;
+    color:rgba(255,255,255,.9);
+}
+.modal-buttons{
+    display:flex;
+    gap:.5rem;
+    justify-content:flex-end;
+    margin-top:1.5rem;
+}
+.modal-btn-save{
+    background:#22c55e;
+    color:white;
+    padding:.7rem 1.5rem;
+    border:none;
+    border-radius:.5rem;
+    cursor:pointer;
+    font-weight:600;
+}
+.modal-btn-cancel{
+    background:#374151;
+    color:white;
+    padding:.7rem 1.5rem;
+    border:none;
+    border-radius:.5rem;
+    cursor:pointer;
+    font-weight:600;
+}
 
-      textarea,
-      input {
-        width: 100%;
-        padding: 0.75rem;
-        margin: 0;
-        background: #111;
-        color: white;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 0.5rem;
-        font-family: "Inter", sans-serif;
-        font-size: 1rem;
-      }
-      textarea {
-        min-height: 100px;
-        resize: vertical;
-      }
-      .time-inputs {
-        display: flex;
-        gap: 0.75rem;
-      }
-      .time-inputs input {
-        flex: 1;
-        text-align: center;
-        font-size: 1.1rem;
-      }
+textarea,input{
+    width:100%;
+    padding:.75rem;
+    margin:0;
+    background:#111;
+    color:white;
+    border:1px solid rgba(255,255,255,.3);
+    border-radius:.5rem;
+    font-family:'Inter',sans-serif;
+    font-size:1rem;
+}
+textarea{
+    min-height:100px;
+    resize:vertical;
+}
+.time-inputs{
+    display:flex;
+    gap:.75rem;
+}
+.time-inputs input{
+    flex:1;
+    text-align:center;
+    font-size:1.1rem;
+}
 
-      footer {
-        text-align: center;
-        padding: 1.5rem 1rem;
-        color: rgba(255, 255, 255, 0.5);
-        font-size: 0.9rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        margin-top: auto;
-        width: 100%;
-      }
-    </style>
-  </head>
+footer{
+    text-align:center;
+    padding:1.5rem 1rem;
+    color:rgba(255,255,255,.5);
+    font-size:0.9rem;
+    border-top:1px solid rgba(255,255,255,.1);
+    margin-top:auto;
+    width:100%;
+}
+</style>
+</head>
 
-  <body>
-    <div class="container">
-      <header>
-        <h1>Mark Park</h1>
-        <p class="subtitle">Save your parking spot and navigate back to it</p>
-      </header>
+<body>
+<div class="container">
+<header>
+<h1>Mark Park</h1>
+<p class="subtitle">Save your parking spot and navigate back to it</p>
+</header>
 
-      <div class="main-grid">
-        <div>
-          <div class="map-section">
-            <div id="map"></div>
-            <button id="center-location-btn" class="center-btn">🍭</button>
-            <div id="distance-box" class="distance-box">0 m</div>
+<div class="main-grid">
+<div>
+<div class="map-section">
+    <div id="map"></div>
+    <button id="center-location-btn" class="center-btn">📍</button>
+    <div id="distance-box" class="distance-box">0 m</div>
 
-            <div class="bottom-controls">
-              <button id="locate-btn" class="btn btn-locate">📍 Find</button>
-              <button id="save-btn" class="btn btn-save">💾 Save</button>
-              <button id="navigate-btn" class="btn btn-navigate">
-                🧭 Navigate
-              </button>
-              <button id="clear-btn" class="btn btn-clear">🗑️ Clear</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="info-panel">
-          <div class="card">
-            <h2>📍 Saved Location</h2>
-            <div id="location-details">
-              <p style="opacity: 0.5">🅿️ No parking location saved yet</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <footer>By AKSHATH</footer>
+    <div class="bottom-controls">
+        <button id="locate-btn" class="btn btn-locate">📍 Find</button>
+        <button id="save-btn" class="btn btn-save">💾 Save</button>
+        <button id="navigate-btn" class="btn btn-navigate">🧭 Navigate</button>
+        <button id="clear-btn" class="btn btn-clear">🗑️ Clear</button>
     </div>
+</div>
+</div>
 
-    <div id="descriptionModal" class="modal">
-      <div class="modal-content">
-        <h3>💾 Save Parking Location</h3>
+<div class="info-panel">
+<div class="card">
+<h2>📍 Saved Location</h2>
+<div id="location-details">
+<p style="opacity:.5;">🅿️ No parking location saved yet</p>
+</div>
+</div>
+</div>
+</div>
 
-        <h4>Enter Description</h4>
-        <textarea
-          id="parkingDescription"
-          placeholder="Details (optional)"
-        ></textarea>
+<footer>By AKSHATH</footer>
+</div>
 
-        <h4>Enter Time for Timer</h4>
-        <div class="time-inputs">
-          <input
-            type="number"
-            id="parkingHours"
-            min="0"
-            max="23"
-            placeholder="HH"
-          />
-          <input
-            type="number"
-            id="parkingMinutes"
-            min="0"
-            max="59"
-            placeholder="MM"
-          />
-        </div>
+<div id="descriptionModal" class="modal">
+<div class="modal-content">
+<h3>💾 Save Parking Location</h3>
 
-        <div class="modal-buttons">
-          <button class="modal-btn-cancel" onclick="closeModal()">
-            Cancel
-          </button>
-          <button class="modal-btn-save" onclick="confirmSave()">Save</button>
-        </div>
-      </div>
-    </div>
+<h4>Enter Description</h4>
+<textarea id="parkingDescription" placeholder="Details (optional)"></textarea>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+<h4>Enter Time for Timer</h4>
+<div class="time-inputs">
+    <input type="number" id="parkingHours" min="0" max="23" placeholder="HH">
+    <input type="number" id="parkingMinutes" min="0" max="59" placeholder="MM">
+</div>
 
-    <script>
-      let map, userMarker, parkingMarker, routingControl, simpleLine;
-      let savedLocation = null;
-      let userWatchId = null;
-      let endTime = null,
-        timerInt = null;
+<div class="modal-buttons">
+    <button class="modal-btn-cancel" onclick="closeModal()">Cancel</button>
+    <button class="modal-btn-save" onclick="confirmSave()">Save</button>
+</div>
+</div>
+</div>
 
-      function initMap() {
-        map = L.map("map", {
-          attributionControl: false,
-          zoomControl: true,
-          dragging: true,
-          touchZoom: true,
-          scrollWheelZoom: false,
-          doubleClickZoom: true,
-          boxZoom: true,
-          tap: true,
-          tapTolerance: 15,
-          trackResize: true,
-        }).setView([12.9716, 77.5946], 15);
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          maxZoom: 19,
-          attribution: "",
-        }).addTo(map);
+<script>
+let map, userMarker, parkingMarker, routingControl, simpleLine;
+let savedLocation = null;
+let userWatchId = null;
+let endTime = null, timerInt = null;
 
-        // Prevent page scroll when interacting with map
-        const mapElement = document.getElementById("map");
-        mapElement.addEventListener(
-          "touchstart",
-          function (e) {
-            e.stopPropagation();
-          },
-          { passive: true }
-        );
+function initMap() {
+    map = L.map("map", {
+        attributionControl: false,
+        zoomControl: true,
+        dragging: true,
+        touchZoom: true,
+        scrollWheelZoom: false,
+        doubleClickZoom: true,
+        boxZoom: true,
+        tap: true,
+        tapTolerance: 15,
+        trackResize: true
+    }).setView([12.9716, 77.5946], 15);
 
-        mapElement.addEventListener(
-          "touchmove",
-          function (e) {
-            e.stopPropagation();
-          },
-          { passive: true }
-        );
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: ''
+    }).addTo(map);
 
-        loadSaved();
-      }
-      initMap();
+    // Prevent page scroll when interacting with map
+    const mapElement = document.getElementById('map');
+    mapElement.addEventListener('touchstart', function(e) {
+        e.stopPropagation();
+    }, { passive: true });
+    
+    mapElement.addEventListener('touchmove', function(e) {
+        e.stopPropagation();
+    }, { passive: true });
 
-      function locateUser() {
-        if (userWatchId) navigator.geolocation.clearWatch(userWatchId);
+    loadSaved();
+}
+initMap();
 
-        userWatchId = navigator.geolocation.watchPosition(
-          (pos) => {
-            const { latitude, longitude } = pos.coords;
+function locateUser() {
+    if(userWatchId) navigator.geolocation.clearWatch(userWatchId);
 
-            if (!userMarker) {
-              userMarker = L.marker([latitude, longitude], {
-                icon: L.divIcon({
-                  html: `<div style="background:#3b82f6;width:18px;height:18px;border-radius:50%;border:4px solid #fff;box-shadow:0 0 10px rgba(59,130,246,0.5);"></div>`,
-                  className: "",
-                  iconSize: [26, 26],
-                  iconAnchor: [13, 13],
-                }),
-              }).addTo(map);
-              map.setView([latitude, longitude], 16);
+    userWatchId = navigator.geolocation.watchPosition(
+        pos=>{
+            const {latitude,longitude}=pos.coords;
+
+            if(!userMarker){
+                userMarker = L.marker([latitude,longitude],{
+                    icon:L.divIcon({
+                        html:`<div style="background:#3b82f6;width:18px;height:18px;border-radius:50%;border:4px solid #fff;box-shadow:0 0 10px rgba(59,130,246,0.5);"></div>`,
+                        className: '',
+                        iconSize: [26, 26],
+                        iconAnchor: [13, 13]
+                    })
+                }).addTo(map);
+                map.setView([latitude,longitude], 16);
             } else {
-              userMarker.setLatLng([latitude, longitude]);
+                userMarker.setLatLng([latitude,longitude]);
             }
 
             updateDistance();
-          },
-          (err) => alert("Please enable location services"),
-          { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
-        );
-      }
+        },
+        err=>alert("Please enable location services"),
+        {enableHighAccuracy:true, maximumAge:10000, timeout:5000}
+    );
+}
 
-      function openModal() {
-        if (!userMarker) {
-          alert("Find your location first");
-          return;
-        }
-        document.getElementById("descriptionModal").style.display = "block";
-        document.body.style.overflow = "hidden";
-      }
-      function closeModal() {
-        document.getElementById("descriptionModal").style.display = "none";
-        document.body.style.overflow = "";
-        document.getElementById("parkingDescription").value = "";
-        document.getElementById("parkingHours").value = "";
-        document.getElementById("parkingMinutes").value = "";
-      }
+function openModal(){
+    if(!userMarker){alert("Find your location first");return;}
+    document.getElementById("descriptionModal").style.display="block";
+    document.body.style.overflow = "hidden";
+}
+function closeModal(){
+    document.getElementById("descriptionModal").style.display="none";
+    document.body.style.overflow = "";
+    document.getElementById("parkingDescription").value = "";
+    document.getElementById("parkingHours").value = "";
+    document.getElementById("parkingMinutes").value = "";
+}
 
-      function confirmSave() {
-        let pos = userMarker.getLatLng();
-        let d = document.getElementById("parkingDescription").value.trim();
-        let h = parseInt(document.getElementById("parkingHours").value) || 0;
-        let m = parseInt(document.getElementById("parkingMinutes").value) || 0;
+function confirmSave(){
+    let pos = userMarker.getLatLng();
+    let d = document.getElementById("parkingDescription").value.trim();
+    let h = parseInt(document.getElementById("parkingHours").value)||0;
+    let m = parseInt(document.getElementById("parkingMinutes").value)||0;
 
-        savedLocation = {
-          lat: pos.lat,
-          lng: pos.lng,
-          description: d,
-          timestamp: new Date().toLocaleString(),
-          parkingDuration: h * 60 + m,
-        };
+    savedLocation = {
+        lat:pos.lat,
+        lng:pos.lng,
+        description:d,
+        timestamp:new Date().toLocaleString(),
+        parkingDuration:h*60+m
+    };
 
-        if (savedLocation.parkingDuration > 0) {
-          endTime = Date.now() + savedLocation.parkingDuration * 60000;
-          startTimer();
-        }
+    if(savedLocation.parkingDuration>0){
+        endTime = Date.now() + savedLocation.parkingDuration*60000;
+        startTimer();
+    }
 
-        addParkingMarker();
-        updateDetails();
+    addParkingMarker();
+    updateDetails();
 
-        document.getElementById("navigate-btn").style.display = "block";
-        document.getElementById("clear-btn").style.display = "block";
-        document.getElementById("distance-box").style.display = "block";
+    document.getElementById("navigate-btn").style.display="block";
+    document.getElementById("clear-btn").style.display="block";
+    document.getElementById("distance-box").style.display="block";
 
-        saveToLocal();
-        closeModal();
-      }
+    saveToLocal();
+    closeModal();
+}
 
-      function addParkingMarker() {
-        if (parkingMarker) map.removeLayer(parkingMarker);
+function addParkingMarker(){
+    if(parkingMarker) map.removeLayer(parkingMarker);
 
-        parkingMarker = L.marker([savedLocation.lat, savedLocation.lng], {
-          icon: L.divIcon({
-            html: `<div style="font-size:40px;">🅿️</div>`,
-            className: "",
+    parkingMarker = L.marker([savedLocation.lat,savedLocation.lng],{
+        icon:L.divIcon({
+            html:`<div style="font-size:40px;">🅿️</div>`,
+            className: '',
             iconSize: [40, 40],
-            iconAnchor: [20, 40],
-          }),
-        }).addTo(map);
-      }
+            iconAnchor: [20, 40]
+        })
+    }).addTo(map);
+}
 
-      function startTimer() {
-        if (timerInt) clearInterval(timerInt);
-        timerInt = setInterval(() => {
-          let left = endTime - Date.now();
-          let box = document.getElementById("timer-display");
+function startTimer(){
+    if(timerInt) clearInterval(timerInt);
+    timerInt=setInterval(()=>{
+        let left = endTime-Date.now();
+        let box=document.getElementById("timer-display");
 
-          if (left <= 0) {
-            box.innerHTML = `<div class="timer-time" style="color:#ef4444;">00:00:00</div>`;
+        if(left<=0){
+            box.innerHTML=`<div class="timer-time" style="color:#ef4444;">00:00:00</div>`;
             clearInterval(timerInt);
             return;
-          }
+        }
 
-          let totalSecs = Math.floor(left / 1000);
-          let hh = Math.floor(totalSecs / 3600);
-          let mm = Math.floor((totalSecs % 3600) / 60);
-          let ss = totalSecs % 60;
+        let totalSecs=Math.floor(left/1000);
+        let hh=Math.floor(totalSecs/3600);
+        let mm=Math.floor((totalSecs%3600)/60);
+        let ss=totalSecs%60;
 
-          box.innerHTML = `<div class="timer-time">${String(hh).padStart(
-            2,
-            "0"
-          )}:${String(mm).padStart(2, "0")}:${String(ss).padStart(
-            2,
-            "0"
-          )}</div>`;
-        }, 1000);
-      }
+        box.innerHTML=`<div class="timer-time">${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}</div>`;
+    },1000);
+}
 
-      function updateDetails() {
-        let d = document.getElementById("location-details");
-        let html = `<p><strong>Saved:</strong> ${savedLocation.timestamp}</p>`;
-        if (savedLocation.description)
-          html += `<p><strong>Details:</strong> ${savedLocation.description}</p>`;
-        if (savedLocation.parkingDuration > 0)
-          html += `<div id="timer-display" class="timer-display"></div>`;
-        d.innerHTML = html;
-
-        // If timer should be running, restart it
-        if (
-          endTime &&
-          Date.now() < endTime &&
-          savedLocation.parkingDuration > 0
-        ) {
-          // Timer display was just created, start updating it
-          setTimeout(() => {
-            if (document.getElementById("timer-display") && !timerInt) {
-              startTimer();
+function updateDetails(){
+    let d=document.getElementById("location-details");
+    let html=`<p><strong>Saved:</strong> ${savedLocation.timestamp}</p>`;
+    if(savedLocation.description) html+=`<p><strong>Details:</strong> ${savedLocation.description}</p>`;
+    if(savedLocation.parkingDuration>0) html+=`<div id="timer-display" class="timer-display"></div>`;
+    d.innerHTML=html;
+    
+    // If timer should be running, restart it
+    if(endTime && Date.now()<endTime && savedLocation.parkingDuration>0){
+        // Timer display was just created, start updating it
+        setTimeout(()=>{
+            if(document.getElementById("timer-display") && !timerInt){
+                startTimer();
             }
-          }, 100);
-        }
-      }
+        }, 100);
+    }
+}
 
-      function updateDistance() {
-        if (!savedLocation || !userMarker) return;
+function updateDistance(){
+    if(!savedLocation || !userMarker) return;
 
-        let d = userMarker
-          .getLatLng()
-          .distanceTo([savedLocation.lat, savedLocation.lng]);
-        document.getElementById("distance-box").innerText =
-          d >= 1000 ? (d / 1000).toFixed(2) + " km" : Math.round(d) + " m";
-      }
+    let d = userMarker.getLatLng().distanceTo([savedLocation.lat,savedLocation.lng]);
+    document.getElementById("distance-box").innerText =
+        d>=1000?(d/1000).toFixed(2)+" km":Math.round(d)+" m";
+}
 
-      function navigateToParking() {
-        if (!savedLocation || !userMarker) {
-          alert("Save a parking spot first");
-          return;
-        }
+function navigateToParking(){
+    if(!savedLocation || !userMarker){
+        alert("Save a parking spot first");
+        return;
+    }
 
-        const userPos = userMarker.getLatLng();
-        const parkPos = L.latLng(savedLocation.lat, savedLocation.lng);
+    const userPos = userMarker.getLatLng();
+    const parkPos = L.latLng(savedLocation.lat,savedLocation.lng);
 
-        if (routingControl) {
-          map.removeControl(routingControl);
-          routingControl = null;
-        }
-        if (simpleLine) {
-          map.removeLayer(simpleLine);
-          simpleLine = null;
-        }
+    if(routingControl){
+        map.removeControl(routingControl);
+        routingControl=null;
+    }
+    if(simpleLine){
+        map.removeLayer(simpleLine);
+        simpleLine=null;
+    }
 
-        try {
-          routingControl = L.Routing.control({
-            waypoints: [userPos, parkPos],
-            addWaypoints: false,
-            draggableWaypoints: false,
-            fitSelectedRoutes: true,
-            show: false,
-            lineOptions: {
-              styles: [{ color: "#a855f7", weight: 6, opacity: 0.9 }],
-            },
+    try{
+        routingControl = L.Routing.control({
+            waypoints:[userPos,parkPos],
+            addWaypoints:false,
+            draggableWaypoints:false,
+            fitSelectedRoutes:true,
+            show:false,
+            lineOptions:{styles:[{color:"#a855f7",weight:6,opacity:0.9}]},
             router: L.Routing.osrmv1({
-              serviceUrl: "https://router.project-osrm.org/route/v1",
-              profile: "car",
+                serviceUrl:"https://router.project-osrm.org/route/v1",
+                profile:"car"
             }),
-            createMarker: () => null,
-          })
-            .on("routingerror", () => {
-              drawStraightLine(userPos, parkPos);
-            })
-            .addTo(map);
-        } catch (e) {
-          drawStraightLine(userPos, parkPos);
-        }
-
-        setTimeout(() => {
-          if (!routingControl) {
-            drawStraightLine(userPos, parkPos);
-          }
-        }, 5000);
-      }
-
-      function drawStraightLine(a, b) {
-        if (simpleLine) map.removeLayer(simpleLine);
-        simpleLine = L.polyline([a, b], {
-          color: "#a855f7",
-          weight: 6,
-          opacity: 0.9,
+            createMarker:()=>null
+        }).on("routingerror",()=>{
+            drawStraightLine(userPos,parkPos);
         }).addTo(map);
-        map.fitBounds(simpleLine.getBounds(), { padding: [50, 50] });
-      }
+    } catch(e){
+        drawStraightLine(userPos,parkPos);
+    }
 
-      function clearLocation() {
-        if (!confirm("Clear saved location?")) return;
+    setTimeout(()=>{
+        if(!routingControl){
+            drawStraightLine(userPos,parkPos);
+        }
+    },5000);
+}
 
-        savedLocation = null;
-        endTime = null;
+function drawStraightLine(a,b){
+    if(simpleLine) map.removeLayer(simpleLine);
+    simpleLine = L.polyline([a,b],{
+        color:"#a855f7",
+        weight:6,
+        opacity:0.9
+    }).addTo(map);
+    map.fitBounds(simpleLine.getBounds(),{padding:[50,50]});
+}
 
-        if (parkingMarker) map.removeLayer(parkingMarker);
-        if (simpleLine) map.removeLayer(simpleLine);
-        if (routingControl) map.removeControl(routingControl);
-        if (timerInt) clearInterval(timerInt);
+function clearLocation(){
+    if(!confirm("Clear saved location?")) return;
 
-        document.getElementById("navigate-btn").style.display = "none";
-        document.getElementById("clear-btn").style.display = "none";
-        document.getElementById("distance-box").style.display = "none";
+    savedLocation=null;
+    endTime=null;
 
-        document.getElementById(
-          "location-details"
-        ).innerHTML = `<p style="opacity:.5;">🅿️ No parking location saved yet</p>`;
+    if(parkingMarker) map.removeLayer(parkingMarker);
+    if(simpleLine) map.removeLayer(simpleLine);
+    if(routingControl) map.removeControl(routingControl);
+    if(timerInt) clearInterval(timerInt);
 
-        localStorage.removeItem("parkSaved");
-      }
+    document.getElementById("navigate-btn").style.display="none";
+    document.getElementById("clear-btn").style.display="none";
+    document.getElementById("distance-box").style.display="none";
 
-      function saveToLocal() {
-        localStorage.setItem(
-          "parkSaved",
-          JSON.stringify({ savedLocation, endTime })
-        );
-      }
+    document.getElementById("location-details").innerHTML =
+        `<p style="opacity:.5;">🅿️ No parking location saved yet</p>`;
 
-      function loadSaved() {
-        let s = localStorage.getItem("parkSaved");
-        if (!s) return;
+    localStorage.removeItem("parkSaved");
+}
 
-        try {
-          let data = JSON.parse(s);
-          savedLocation = data.savedLocation;
-          endTime = data.endTime;
+function saveToLocal(){
+    localStorage.setItem("parkSaved",JSON.stringify({savedLocation,endTime}));
+}
 
-          if (savedLocation) {
+function loadSaved(){
+    let s=localStorage.getItem("parkSaved");
+    if(!s) return;
+    
+    try {
+        let data=JSON.parse(s);
+        savedLocation=data.savedLocation;
+        endTime=data.endTime;
+
+        if(savedLocation){
             // Add parking marker to map
             addParkingMarker();
-
+            
             // Center map to show both current location and parking spot
-            if (userMarker) {
-              const bounds = L.latLngBounds([
-                userMarker.getLatLng(),
-                [savedLocation.lat, savedLocation.lng],
-              ]);
-              map.fitBounds(bounds, { padding: [50, 50] });
+            if(userMarker){
+                const bounds = L.latLngBounds([
+                    userMarker.getLatLng(),
+                    [savedLocation.lat, savedLocation.lng]
+                ]);
+                map.fitBounds(bounds, {padding: [50, 50]});
             } else {
-              // If no user marker yet, center on parking location
-              map.setView([savedLocation.lat, savedLocation.lng], 16);
+                // If no user marker yet, center on parking location
+                map.setView([savedLocation.lat, savedLocation.lng], 16);
             }
-
+            
             // Update UI
             updateDetails();
-            document.getElementById("navigate-btn").style.display = "block";
-            document.getElementById("clear-btn").style.display = "block";
-            document.getElementById("distance-box").style.display = "block";
-
+            document.getElementById("navigate-btn").style.display="block";
+            document.getElementById("clear-btn").style.display="block";
+            document.getElementById("distance-box").style.display="block";
+            
             // Start timer if still valid
-            if (endTime && Date.now() < endTime) {
-              startTimer();
-            } else if (savedLocation.parkingDuration > 0) {
-              // Timer expired, show 00:00:00
-              updateDetails();
-              if (document.getElementById("timer-display")) {
-                document.getElementById(
-                  "timer-display"
-                ).innerHTML = `<div class="timer-time" style="color:#ef4444;">00:00:00</div>`;
-              }
+            if(endTime && Date.now()<endTime){
+                startTimer();
+            } else if(savedLocation.parkingDuration > 0) {
+                // Timer expired, show 00:00:00
+                updateDetails();
+                if(document.getElementById("timer-display")){
+                    document.getElementById("timer-display").innerHTML=`<div class="timer-time" style="color:#ef4444;">00:00:00</div>`;
+                }
             }
-          }
-        } catch (e) {
-          console.error("Error loading saved location:", e);
-          localStorage.removeItem("parkSaved");
         }
-      }
+    } catch(e) {
+        console.error("Error loading saved location:", e);
+        localStorage.removeItem("parkSaved");
+    }
+}
 
-      document.getElementById("locate-btn").onclick = locateUser;
-      document.getElementById("save-btn").onclick = openModal;
-      document.getElementById("navigate-btn").onclick = navigateToParking;
-      document.getElementById("clear-btn").onclick = clearLocation;
-      document.getElementById("center-location-btn").onclick = () => {
-        if (userMarker) map.setView(userMarker.getLatLng(), 16);
-      };
+document.getElementById("locate-btn").onclick=locateUser;
+document.getElementById("save-btn").onclick=openModal;
+document.getElementById("navigate-btn").onclick=navigateToParking;
+document.getElementById("clear-btn").onclick=clearLocation;
+document.getElementById("center-location-btn").onclick=()=>{
+    if(userMarker) map.setView(userMarker.getLatLng(),16);
+};
 
-      // Close modal when clicking outside
-      document.getElementById("descriptionModal").onclick = function (e) {
-        if (e.target === this) closeModal();
-      };
-    </script>
-  </body>
+// Close modal when clicking outside
+document.getElementById("descriptionModal").onclick = function(e) {
+    if(e.target === this) closeModal();
+};
+</script>
+</body>
 </html>
