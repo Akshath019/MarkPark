@@ -52,22 +52,14 @@ h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;color:white;}
     border:1px solid rgba(255,255,255,.2);
     border-radius:1rem;
     overflow:hidden;
-    touch-action: none;
 }
 #map{
     width:100%;
     height:100%;
-    touch-action: none;
 }
 
-/* Hide Leaflet attribution box */
 .leaflet-control-attribution {
     display: none !important;
-}
-
-/* Prevent map touch events from scrolling page */
-.leaflet-container {
-    touch-action: none;
 }
 
 .center-btn{
@@ -252,14 +244,14 @@ footer{
 <div>
 <div class="map-section">
     <div id="map"></div>
-    <button id="center-location-btn" class="center-btn">🍭</button>
+    <button id="center-location-btn" class="center-btn">📍</button>
     <div id="distance-box" class="distance-box">0 m</div>
 
     <div class="bottom-controls">
-        <button id="locate-btn" class="btn btn-locate">📍 Find</button>
-        <button id="save-btn" class="btn btn-save">💾 Save</button>
-        <button id="navigate-btn" class="btn btn-navigate">🧭 Navigate</button>
-        <button id="clear-btn" class="btn btn-clear">🗑️ Clear</button>
+        <button id="locate-btn" class="btn btn-locate">Find</button>
+        <button id="save-btn" class="btn btn-save">Save</button>
+        <button id="navigate-btn" class="btn btn-navigate"> Navigate</button>
+        <button id="clear-btn" class="btn btn-clear">Clear</button>
     </div>
 </div>
 </div>
@@ -268,7 +260,7 @@ footer{
 <div class="card">
 <h2>📍 Saved Location</h2>
 <div id="location-details">
-<p style="opacity:.5;">🅿️ No parking location saved yet</p>
+<p style="opacity:.5;">📍 No parking location saved yet</p>
 </div>
 </div>
 </div>
@@ -312,11 +304,11 @@ function initMap() {
         zoomControl: true,
         dragging: true,
         touchZoom: true,
-        scrollWheelZoom: false,
+        scrollWheelZoom: true,
         doubleClickZoom: true,
         boxZoom: true,
         tap: true,
-        tapTolerance: 15,
+        keyboard: true,
         trackResize: true
     }).setView([12.9716, 77.5946], 15);
 
@@ -324,16 +316,6 @@ function initMap() {
         maxZoom: 19,
         attribution: ''
     }).addTo(map);
-
-    // Prevent page scroll when interacting with map
-    const mapElement = document.getElementById('map');
-    mapElement.addEventListener('touchstart', function(e) {
-        e.stopPropagation();
-    }, { passive: true });
-    
-    mapElement.addEventListener('touchmove', function(e) {
-        e.stopPropagation();
-    }, { passive: true });
 
     loadSaved();
 }
@@ -415,10 +397,10 @@ function addParkingMarker(){
 
     parkingMarker = L.marker([savedLocation.lat,savedLocation.lng],{
         icon:L.divIcon({
-            html:`<div style="font-size:40px;">🅿️</div>`,
+            html:`<div style="font-size:45px;">📍</div>`,
             className: '',
-            iconSize: [40, 40],
-            iconAnchor: [20, 40]
+            iconSize: [45, 45],
+            iconAnchor: [22, 45]
         })
     }).addTo(map);
 }
@@ -451,9 +433,7 @@ function updateDetails(){
     if(savedLocation.parkingDuration>0) html+=`<div id="timer-display" class="timer-display"></div>`;
     d.innerHTML=html;
     
-    // If timer should be running, restart it
     if(endTime && Date.now()<endTime && savedLocation.parkingDuration>0){
-        // Timer display was just created, start updating it
         setTimeout(()=>{
             if(document.getElementById("timer-display") && !timerInt){
                 startTimer();
@@ -541,7 +521,7 @@ function clearLocation(){
     document.getElementById("distance-box").style.display="none";
 
     document.getElementById("location-details").innerHTML =
-        `<p style="opacity:.5;">🅿️ No parking location saved yet</p>`;
+        `<p style="opacity:.5;">📍 No parking location saved yet</p>`;
 
     localStorage.removeItem("parkSaved");
 }
@@ -560,10 +540,8 @@ function loadSaved(){
         endTime=data.endTime;
 
         if(savedLocation){
-            // Add parking marker to map
             addParkingMarker();
             
-            // Center map to show both current location and parking spot
             if(userMarker){
                 const bounds = L.latLngBounds([
                     userMarker.getLatLng(),
@@ -571,21 +549,17 @@ function loadSaved(){
                 ]);
                 map.fitBounds(bounds, {padding: [50, 50]});
             } else {
-                // If no user marker yet, center on parking location
                 map.setView([savedLocation.lat, savedLocation.lng], 16);
             }
             
-            // Update UI
             updateDetails();
             document.getElementById("navigate-btn").style.display="block";
             document.getElementById("clear-btn").style.display="block";
             document.getElementById("distance-box").style.display="block";
             
-            // Start timer if still valid
             if(endTime && Date.now()<endTime){
                 startTimer();
             } else if(savedLocation.parkingDuration > 0) {
-                // Timer expired, show 00:00:00
                 updateDetails();
                 if(document.getElementById("timer-display")){
                     document.getElementById("timer-display").innerHTML=`<div class="timer-time" style="color:#ef4444;">00:00:00</div>`;
@@ -606,7 +580,6 @@ document.getElementById("center-location-btn").onclick=()=>{
     if(userMarker) map.setView(userMarker.getLatLng(),16);
 };
 
-// Close modal when clicking outside
 document.getElementById("descriptionModal").onclick = function(e) {
     if(e.target === this) closeModal();
 };
