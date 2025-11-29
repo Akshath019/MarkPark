@@ -417,57 +417,162 @@ function navigateToParking(){
         return;
     }
 
+    const userPos = userMarker.getLatLng();
+    const parkingPos = L.latLng(savedLocation.lat, savedLocation.lng);
+
+    // Remove existing route
     if(routingControl) map.removeControl(routingControl);
 
+    // Show loading
+    navigationPanel.style.display = "block";
+    navigationSteps.innerHTML = '<div style="text-align:center;padding:2rem;">🔄 Calculating route...</div>';
+
+    // Create routing control with proper error handling
     routingControl = L.Routing.control({
         waypoints: [
-            L.latLng(userMarker.getLatLng().lat, userMarker.getLatLng().lng),
-            L.latLng(savedLocation.lat, savedLocation.lng)
+            L.latLng(userPos.lat, userPos.lng),
+            L.latLng(parkingPos.lat, parkingPos.lng)
         ],
+        routeWhileDragging: false,
+        addWaypoints: false,
+        draggableWaypoints: false,
+        fitSelectedRoutes: true,
+        showAlternatives: false,
         lineOptions: {
             styles: [{color: "#a855f7", weight: 6, opacity: 0.8}]
         },
         createMarker: () => null,
-        show: false,
-        addWaypoints: false,
-        routeWhileDragging: false,
-        fitSelectedRoutes: true,
         router: L.Routing.osrmv1({
-            serviceUrl: 'https://router.project-osrm.org/route/v1'
+            serviceUrl: 'https://router.project-osrm.org/route/v1',
+            profile: 'car'
+        }),
+        formatter: new L.Routing.Formatter({
+            units: 'metric'
         })
     })
     .on('routesfound', e => {
-        const route = e.routes[0];
-        const summary = route.summary;
-        const instructions = route.instructions;
+        try {
+            const route = e.routes[0];
+            const summary = route.summary;
+            const instructions = route.instructions;
 
-        navigationPanel.style.display = "block";
+            const distKm = (summary.totalDistance / 1000).toFixed(2);
+            const timeMin = Math.round(summary.totalTime / 60);
 
-        const distKm = (summary.totalDistance / 1000).toFixed(2);
-        const timeMin = Math.round(summary.totalTime / 60);
+            let html = `
+                <div style="background:#1a1a1a;padding:1rem;border-radius:0.5rem;margin-bottom:1rem;">
+                    <strong>📏 Distance:</strong> ${distKm} km<br>
+                    <strong>⏱️ Estimated Time:</strong> ${timeMin} min<br>
+                    <strong>🚗 Route Type:</strong> Driving
+                </div>
+            `;
 
-        let html = `
-            <div style="background:#1a1a1a;padding:1rem;border-radius:0.5rem;margin-bottom:1rem;">
-                <strong>📏 Distance:</strong> ${distKm} km<br>
-                <strong>⏱️ Estimated Time:</strong> ${timeMin} min
-            </div>
-        `;
+            if(instructions && instructions.length > 0){
+                instructions.forEach((step, i) => {
+                    const icon = step.type === 'WaypointReached' ? '🎯' : '➡️';
+                    html += `<div style="margin:0.7rem 0;padding:0.5rem;background:#0a0a0a;border-radius:0.5rem;">
+                                <strong>${icon} Step ${i + 1}:</strong> ${step.text}
+                             </div>`;
+                });
+            }
 
-        instructions.forEach((step, i) => {
-            const icon = step.type === 'WaypointReached' ? '🎯' : '➡️';
-            html += `<div style="margin:0.7rem 0;padding:0.5rem;background:#0a0a0a;border-radius:0.5rem;">
-                        <strong>${icon} Step ${i + 1}:</strong> ${step.text}
-                     </div>`;
-        });
-
-        navigationSteps.innerHTML = html;
-        navigationPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            navigationSteps.innerHTML = html;
+            navigationPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch(err) {
+            console.error("Route display error:", err);
+            showSimpleRoute();
+        }
     })
     .on('routingerror', e => {
         console.error("Routing error:", e);
-        alert("Could not calculate route. Please try again.");
+        showSimpleRoute();
     })
     .addTo(map);
+
+    // Fallback: Show simple straight line if routing fails
+    setTimeout(() => {
+        if(navigationSteps.innerHTML.includes('Calculating')) {
+            showSimpleRoute();
+        }
+    }, 5000);
+}
+
+// Fallback function for simple navigation
+function showSimpleRoute(){
+    if(!savedLocation || !userMarker) return;
+
+    const userPos = userMarker.getLatLng();
+    const parkingPos = L.latLng(savedLocation.lat, savedLocation.lng);
+    const distance = userPos.distanceTo(parkingPos);
+
+    // Draw simple line
+    if(routingControl) map.removeControl(routingControl);
+    
+    const line = L.polyline([
+        [userPos.lat, userPos.lng],
+        [parkingPos.lat, parkingPos.lng]
+    ], {
+        color: '#a855f7',
+        weight: 4,
+        opacity: 0.7,
+        dashArray: '10, 10'
+    }).addTo(map);
+
+    // Store for cleanup
+    if(window.simpleLine) map.removeLayer(window.simpleLine);
+    window.simpleLine = line;
+
+    // Fit bounds
+    map.fitBounds(line.getBounds(), {padding: [50, 50]});
+
+    // Calculate bearing for direction
+    const bearing = getBearing(userPos.lat, userPos.lng, parkingPos.lat, parkingPos.lng);
+    const direction = getDirection(bearing);
+
+    const distKm = (distance / 1000).toFixed(2);
+    const distM = Math.round(distance);
+
+    navigationPanel.style.display = "block";
+    navigationSteps.innerHTML = `
+        <div style="background:#1a1a1a;padding:1rem;border-radius:0.5rem;margin-bottom:1rem;">
+            <strong>📏 Straight-line Distance:</strong> ${distance >= 1000 ? distKm + ' km' : distM + ' m'}<br>
+            <strong>🧭 Direction:</strong> ${direction}
+        </div>
+        <div style="margin:1rem 0;padding:1rem;background:#0a0a0a;border-radius:0.5rem;">
+            <strong>🎯 Simple Navigation:</strong><br>
+            Head ${direction} towards your parking spot.<br><br>
+            <em style="opacity:0.7;">Tip: You can also use Google Maps or your phone's navigation app for turn-by-turn directions.</em>
+        </div>
+        <button onclick="openInGoogleMaps()" style="width:100%;padding:1rem;background:#4285f4;border:none;border-radius:0.5rem;color:white;font-weight:600;cursor:pointer;margin-top:1rem;">
+            🗺️ Open in Google Maps
+        </button>
+    `;
+}
+
+// Calculate bearing between two points
+function getBearing(lat1, lon1, lat2, lon2) {
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const y = Math.sin(dLon) * Math.cos(lat2 * Math.PI / 180);
+    const x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
+              Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos(dLon);
+    let bearing = Math.atan2(y, x) * 180 / Math.PI;
+    bearing = (bearing + 360) % 360;
+    return bearing;
+}
+
+// Convert bearing to compass direction
+function getDirection(bearing) {
+    const directions = ['North', 'North-East', 'East', 'South-East', 'South', 'South-West', 'West', 'North-West'];
+    const index = Math.round(bearing / 45) % 8;
+    return directions[index];
+}
+
+// Open in Google Maps
+function openInGoogleMaps() {
+    if(!savedLocation || !userMarker) return;
+    const userPos = userMarker.getLatLng();
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${userPos.lat},${userPos.lng}&destination=${savedLocation.lat},${savedLocation.lng}&travelmode=driving`;
+    window.open(url, '_blank');
 }
 
 function updateDistance(){
@@ -493,6 +598,7 @@ function clearLocation(){
 
     if(parkingMarker) map.removeLayer(parkingMarker);
     if(routingControl) map.removeControl(routingControl);
+    if(window.simpleLine) map.removeLayer(window.simpleLine);
 
     document.getElementById("navigate-btn").style.display = "none";
     document.getElementById("clear-btn").style.display = "none";
